@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Apple's Little Birthday House ♡</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{
+
+ margin:0;min-height:100vh;background:#171426;color:#fff;
+
+ font-family:Georgia,serif;display:flex;align-items:center;
+
+ justify-content:center;flex-direction:column;padding:18px;
+
+}
+
+h1{color:#ffd9e8;font-size:clamp(22px,5vw,34px);margin:8px}
+
+.subtitle{color:#d7c5df;margin:5px 0 15px}
+
+.game{
+
+ width:min(100%,760px);background:#30243e;padding:12px;
+
+ border:3px solid #f2bfd4;border-radius:18px;
+
+ box-shadow:0 0 35px #e9a5d555;
+
+}
+
+canvas{
+
+ display:block;width:100%;height:auto;
+
+ image-rendering:pixelated;border-radius:8px;
+
+ background:#49364d;
+
+}
+
+.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+
+button{border:2px solid #f5c5d8;background:#62465f;color:white;border-radius:12px;padding:11px 16px;font-size:16px;cursor:pointer;touch-action:manipulation}
+
+button:active{transform:scale(.94);background:#a66c8d}
+
+.arrows{display:flex;gap:7px}
+
+.hint{text-align:center;color:#f5d6e5;font-size:13px;margin:12px}
+
+#popup{display:none;position:fixed;inset:0;background:#130e1dcc;align-items:center;justify-content:center;padding:20px;z-index:5}
+
+.card{background:#fff0f5;color:#65465d;border:4px solid #e7a8c5;border-radius:20px;padding:28px 22px;max-width:390px;width:100%;text-align:center;box-shadow:0 0 40px #ffb8d966;animation:appear .4s ease}
+
+.card h2{font-size:29px;color:#a64e79;margin:0 0 12px}
+
+.card p{font-size:18px;line-height:1.7}
+
+.card button{background:#a65d83;border:0}
+
+@keyframes appear{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>♡ Apple's Little Birthday House ♡</h1>
+
+<div class="subtitle">a tiny cozy world made just for you</div>
+
+<div class="game">
+
+<canvas id="game" width="480" height="300"></canvas>
+
+<div class="controls">
+
+<button id="music">♫ Music Box: OFF</button>
+
+<div class="arrows">
+
+<button data-dir="left">◀</button><button data-dir="up">▲</button><button data-dir="down">▼</button><button data-dir="right">▶</button>
+
+</div>
+
+</div>
+
+<div class="hint">Move with arrows or WASD · Walk near the cake and press SPACE</div>
+
+</div>
+
+<div id="popup">
+
+<div class="card">
+
+<h2>Happy Birthday! ♡</h2>
+
+<p>Dear apple_wannabe3,<br><br>
+
+I made you a little cozy place among the stars.
+
+May your days be as sweet as this cake,
+
+and may your wishes find their way to you. ♡<br><br>
+
+You deserve all the happiness in the world!</p>
+
+<p>With lots of love ✧</p>
+
+<button id="close">Close ♡</button>
+
+</div>
+
+</div>
+
+<script>
+
+const canvas=document.getElementById("game");
+
+const ctx=canvas.getContext("2d");
+
+ctx.imageSmoothingEnabled=false;
+
+const W=480,H=300;
+
+let player={x:205,y:193};
+
+let keys={};
+
+let musicOn=false,audio=null,melodyTimer=null,noteIndex=0;
+
+const stars=Array.from({length:35},()=>({x:Math.random()*480,y:Math.random()*105,size:Math.random()<.5?2:3,phase:Math.random()*6}));
+
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),w,h)}
+
+function pixelText(text,x,y,size,color){ctx.font=`${size}px Georgia`;ctx.fillStyle=color;ctx.fillText(text,x,y)}
+
+function drawRoom(){
+
+rect(0,0,480,215,"#59445b");rect(0,0,480,8,"#382c42");
+
+for(let x=12;x<480;x+=34){rect(x,18,2,2,"#80617b");rect(x+8,32,2,2,"#80617b")}
+
+rect(0,215,480,85,"#a56f68");rect(0,215,480,5,"#d39a85");
+
+for(let x=0;x<480;x+=32)rect(x,220,2,80,"#895c5c");
+
+for(let y=245;y<300;y+=28)rect(0,y,480,2,"#895c5c");
+
+rect(35,25,150,112,"#392b45");rect(41,31,138,100,"#18233d");rect(45,35,130,92,"#263553");
+
+stars.forEach(s=>{let glow=(Math.sin(Date.now()/450+s.phase)+1)/2;ctx.globalAlpha=.4+glow*.6;rect(s.x%130+49,s.y%82+39,s.size,s.size,"#fff3c7")});ctx.globalAlpha=1;
+
+rect(135,48,15,15,"#ffe9b0");rect(143,45,13,15,"#283957");
+
+rect(108,31,5,100,"#a87979");rect(41,78,138,5,"#a87979");
+
+rect(29,23,13,120,"#b56c85");rect(179,23,13,120,"#b56c85");rect(25,23,19,9,"#d58da2");rect(177,23,19,9,"#d58da2");
+
+rect(365,35,88,115,"#704a4b");rect(360,35,98,8,"#bd8a71");rect(365,87,88,6,"#bd8a71");rect(365,143,88,7,"#bd8a71");
+
+rect(373,48,12,35,"#e9b4a4");rect(388,43,10,40,"#9d789c");rect(402,51,12,32,"#e6c88f");rect(418,46,13,37,"#7f9b91");rect(437,54,10,29,"#d58da2");
+
+rect(375,99,13,39,"#d58da2");rect(391,105,12,33,"#e7c68f");rect(407,96,11,42,"#879caa");rect(423,103,13,35,"#b38baf");
+
+rect(220,80,105,110,"#795052");rect(230,92,85,88,"#3a2b3b");rect(237,145,70,31,"#f19a5b");rect(247,130,48,38,"#ffbd69");rect(256,143,28,28,"#ffe29b");rect(215,75,115,10,"#c28c79");rect(225,184,100,8,"#c28c79");
+
+ctx.globalAlpha=.12+Math.sin(Date.now()/250)*.04;rect(200,100,145,100,"#ffb26e");ctx.globalAlpha=1;
+
+rect(85,222,235,58,"#9e617d");rect(95,229,215,44,"#d18aa0");rect(105,236,195,30,"#a96786");rect(185,242,35,18,"#f1c1c9");
+
+rect(25,184,25,30,"#9b665b");rect(29,170,6,18,"#71946b");rect(38,165,6,23,"#71946b");rect(20,173,8,12,"#71946b");rect(42,176,9,12,"#71946b");
+
+rect(350,190,85,8,"#bd8b70");rect(360,198,7,27,"#80554d");rect(420,198,7,27,"#80554d");
+
+}
+
+function drawCake(){
+
+rect(333,184,69,7,"#f3d5ca");rect(342,160,51,24,"#f2b4c5");rect(342,160,51,6,"#fff0db");rect(347,169,42,4,"#d987a4");rect(339,155,57,7,"#fff0db");
+
+rect(345,151,7,7,"#fff0db");rect(359,151,7,7,"#fff0db");rect(374,151,7,7,"#fff0db");
+
+rect(365,138,5,14,"#fff0a9");rect(364,133,7,6,"#ffb65d");rect(366,128,3,6,"#fff1a9");pixelText("♡",382,146,11,"#fff2d7");
+
+}
+
+function drawCat(x,y,color,tailColor){
+
+rect(x-8,y+9,7,4,tailColor);rect(x-11,y+5,5,5,tailColor);rect(x,y+8,24,13,color);rect(x+3,y+4,18,13,color);rect(x+3,y-4,18,16,color);rect(x+3,y-9,6,8,color);rect(x+15,y-9,6,8,color);rect(x+7,y+2,3,3,"#382b3d");rect(x+16,y+2,3,3,"#382b3d");rect(x+12,y+7,3,2,"#d98c9d");rect(x+3,y+19,6,4,color);rect(x+16,y+19,6,4,color);
+
+}
+
+function drawYarn(x,y){rect(x,y,15,13,"#d77d9f");rect(x+3,y-3,9,4,"#f2b3ca");rect(x+5,y+4,7,2,"#ffe0e8");rect(x+11,y+11,13,2,"#f3c1d0")}
+
+function drawPlayer(){
+
+let x=Math.round(player.x),y=Math.round(player.y);
+
+rect(x-5,y+24,24,4,"#65485b");rect(x,y,15,8,"#553a3c");rect(x-2,y+5,4,10,"#553a3c");rect(x+13,y+5,4,10,"#553a3c");rect(x+1,y+7,13,12,"#f3c49f");rect(x+1,y+6,13,4,"#553a3c");rect(x+4,y+12,2,2,"#49323c");rect(x+10,y+12,2,2,"#49323c");rect(x-1,y+19,17,13,"#e89bb9");rect(x-4,y+21,5,9,"#e89bb9");rect(x+15,y+21,5,9,"#e89bb9");rect(x,y+31,6,4,"#513746");rect(x+11,y+31,6,4,"#513746");
+
+}
+
+function draw(){
+
+ctx.clearRect(0,0,W,H);drawRoom();drawCake();
+
+drawCat(80,190,"#e9c6a0","#c99d79");drawCat(285,202,"#d4d0d7","#aaa6b7");
+
+drawYarn(112,208);drawYarn(315,215);
+
+pixelText("✦",205,48,13,"#ffe9b5");pixelText("♡",333,60,13,"#f7c7d9");pixelText("✧",195,105,12,"#ffe6a8");
+
+drawPlayer();
+
+if(Math.hypot(player.x-365,player.y-165)<48){rect(280,112,140,19,"#34263f");pixelText("Press SPACE ♡",291,126,12,"#ffe6ef")}
+
+requestAnimationFrame(draw);
+
+}
+
+draw();
+
+function move(){
+
+let dx=0,dy=0;
+
+if(keys.ArrowLeft||keys.a)dx=-2;if(keys.ArrowRight||keys.d)dx=2;
+
+if(keys.ArrowUp||keys.w)dy=-2;if(keys.ArrowDown||keys.s)dy=2;
+
+player.x=Math.max(8,Math.min(455,player.x+dx));player.y=Math.max(130,Math.min(250,player.y+dy));
+
+requestAnimationFrame(move);
+
+}
+
+move();
+
+document.addEventListener("keydown",e=>{
+
+if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();
+
+keys[e.key]=true;if(e.key===" "||e.key==="Enter")checkCake();
+
+});
+
+document.addEventListener("keyup",e=>keys[e.key]=false);
+
+document.querySelectorAll("[data-dir]").forEach(btn=>{
+
+const dir=btn.dataset.dir,map={left:"ArrowLeft",right:"ArrowRight",up:"ArrowUp",down:"ArrowDown"};
+
+btn.addEventListener("pointerdown",e=>{e.preventDefault();keys[map[dir]]=true});
+
+["pointerup","pointerleave","pointercancel"].forEach(ev=>btn.addEventListener(ev,()=>keys[map[dir]]=false));
+
+});
+
+function checkCake(){if(Math.hypot(player.x-365,player.y-165)<65)document.getElementById("popup").style.display="flex"}
+
+document.getElementById("close").onclick=()=>document.getElementById("popup").style.display="none";
+
+const melody=[[659,.28],[784,.28],[988,.45],[784,.28],[880,.28],[784,.28],[659,.5],[587,.4],[659,.28],[784,.28],[880,.45],[784,.28],[659,.28],[587,.28],[523,.6],[587,.4],[659,.28],[784,.28],[988,.45],[1046,.5],[988,.28],[880,.28],[784,.6]];
+
+function playNote(freq,duration){
+
+if(!audio)return;
+
+const osc=audio.createOscillator(),gain=audio.createGain();
+
+osc.type="sine";osc.frequency.value=freq;
+
+gain.gain.setValueAtTime(.0001,audio.currentTime);
+
+gain.gain.exponentialRampToValueAtTime(.12,audio.currentTime+.02);
+
+gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+duration);
+
+osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration+.05);
+
+}
+
+function startMusic(){
+
+if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();
+
+audio.resume();noteIndex=0;
+
+melodyTimer=setInterval(()=>{const [freq,duration]=melody[noteIndex];playNote(freq,duration);noteIndex=(noteIndex+1)%melody.length},340);
+
+musicOn=true;document.getElementById("music").textContent="♫ Music Box: ON";
+
+}
+
+function stopMusic(){clearInterval(melodyTimer);musicOn=false;document.getElementById("music").textContent="♫ Music Box: OFF"}
+
+document.getElementById("music").onclick=()=>{if(musicOn)stopMusic();else startMusic()};
+
+</script>
+
+</body>
+
+</html>
